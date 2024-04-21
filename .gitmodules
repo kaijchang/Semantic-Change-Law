@@ -1,0 +1,6 @@
+[submodule "US-SAL-Corpus"]
+	path = US-SAL-Corpus
+	url = https://github.com/kajchang/US-SAL-Corpus.git
+[submodule "US-R-Corpus"]
+	path = US-R-Corpus
+	url = https://github.com/kajchang/US-R-Corpus

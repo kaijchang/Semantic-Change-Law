@@ -1,0 +1,3 @@
+gensim>=4.3.2
+spacy>=3.7.4
+datasets>=2.18.0
