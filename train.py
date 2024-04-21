@@ -98,11 +98,11 @@ class DatasetSentences(SentencesBase):
             else:
                 logging.warn(f"{i} not found in dataset")
 
-# for sentence in YearFileSentences("US-R-Corpus/text", 1770, 1799, english):
-#     print(sentence)
-
 for sentence in YearFileSentences("US-SAL-Corpus/text", 1770, 1799, english):
     print(sentence)
 
-# for sentence in DatasetSentences(dataset, 1770, 1799, english):
-#     print(sentence)
+for sentence in YearFileSentences("US-R-Corpus/text", 1770, 1799, english):
+    print(sentence)
+
+for sentence in DatasetSentences(dataset, 1770, 1799, english):
+    print(sentence)
