@@ -1,20 +1,12 @@
 from spacy.lang.en import English, Language
-from gensim.models import KeyedVectors, Word2Vec
+from gensim.models import Word2Vec
 from datasets import load_dataset, Dataset, config
 
+import functools
 import logging
 import os
 
 from typing import Iterable
-
-english = English(pipeline=[], batch_size=100)
-sentencizer = english.add_pipe("sentencizer")
-
-config.IN_MEMORY_MAX_SIZE = 1e9
-dataset = load_dataset("dell-research-harvard/AmericanStories",
-    "all_years",
-    trust_remote_code=True,
-)
 
 # from https://discuss.python.org/t/string-isplit-iterator-based-split-for-strings/7533/15
 def isplit(s: str, sep: str):
@@ -44,25 +36,26 @@ def isplit(s: str, sep: str):
         yield s[start:index]
         start = index + seplen
 
+
 class SentencesBase:
     """Base class for sentence iterators."""
     def __init__(self, pipeline: Language):
         self.pipeline = pipeline
-        self.num_tokens = 0
 
     def get_sentences(self, texts: Iterable[str]) -> Iterable[list[list[str]]]:
         """Split the specified texts into sentences, consisting of text tokens."""
         for doc in self.pipeline.pipe(texts):
             for sent in doc.sents:
                 sent = [token.text.lower() for token in sent if not token.is_space]
-                self.num_tokens += len(sent)
+                if len(sent) == 0:
+                    continue
                 yield sent
 
 
 class YearFileSentences(SentencesBase):
     """Iterate over the sentences in the corresponding text
     files in the specified corpus."""
-    def __init__(self, dirname: str, start_year: int, end_year: int, pipeline: Language):
+    def __init__(self, dirname: str, pipeline: Language, start_year: int, end_year: int):
         super().__init__(pipeline)
         self.dirname = dirname
         self.start_year = start_year
@@ -77,13 +70,13 @@ class YearFileSentences(SentencesBase):
                     for sent in self.get_sentences(f):
                         yield sent
             else:
-                logging.warn(f"{i}.txt not found in {self.dirname}")
+                logging.warning(f"{i}.txt not found in {self.dirname}")
 
 
 class DatasetSentences(SentencesBase):
     """Iterate over the sentences in the corresponding splits in the
     specified corpus."""
-    def __init__(self, dataset: Dataset, start_year: int, end_year: int, pipeline: Language):
+    def __init__(self, dataset: Dataset, pipeline: Language, start_year: int, end_year: int):
         super().__init__(pipeline)
         self.dataset = dataset
         self.start_year = start_year
@@ -98,11 +91,71 @@ class DatasetSentences(SentencesBase):
             else:
                 logging.warn(f"{i} not found in dataset")
 
-for sentence in YearFileSentences("US-SAL-Corpus/text", 1770, 1799, english):
-    print(sentence)
 
-for sentence in YearFileSentences("US-R-Corpus/text", 1770, 1799, english):
-    print(sentence)
+class SentenceMixer:
+    """"Mixes sentences from multiple iterables, interleaving them and
+    balancing the number of sentences from each iterable."""
+    def __init__(self, *sentence_iterables: list[SentencesBase]):
+        self.sentence_iterables = sentence_iterables
 
-for sentence in DatasetSentences(dataset, 1770, 1799, english):
-    print(sentence)
+    def __iter__(self):
+        iterators = [iter(sentence_iterable) for sentence_iterable in self.sentence_iterables]
+        finished_idxs = set()
+        while len(finished_idxs) < len(self.sentence_iterables):
+            for i, iterator in enumerate(iterators):
+                try:
+                    yield next(iterator)
+                except StopIteration:
+                    finished_idxs.add(i)
+                    iterators[i] = iter(self.sentence_iterables[i])
+
+
+MODELS_DIR = "models"
+
+os.makedirs(MODELS_DIR, exist_ok=True)
+
+logging.basicConfig(level=logging.INFO)
+
+english = English(pipeline=[], batch_size=100)
+sentencizer = english.add_pipe("sentencizer")
+
+config.IN_MEMORY_MAX_SIZE = 1e9
+dataset = load_dataset("dell-research-harvard/AmericanStories",
+    "all_years",
+    trust_remote_code=True,
+)
+
+constructors = {
+    "ussal": functools.partial(YearFileSentences, "US-SAL-Corpus/text", english),
+    "usr": functools.partial(YearFileSentences, "US-R-Corpus/text", english),
+    # "as": functools.partial(DatasetSentences, dataset, english),
+}
+
+model_tag = "_".join(constructors.keys())
+
+partition_starts = [1770] + list(range(1800, 1980, 10))
+
+if __name__ == "__main__":
+    for i in range(len(partition_starts) - 1):
+        start_year = partition_starts[i]
+        end_year = partition_starts[i + 1] - 1
+
+        logging.info(f"Training a model for {start_year}-{end_year}...")
+
+        sentence_iterables = [constructor(start_year, end_year) for constructor in constructors.values()]
+        sentences = SentenceMixer(*sentence_iterables)
+
+        # params from https://github.com/williamleif/histwords/blob/master/sgns/runword2vec.py
+        model = Word2Vec(
+            sentences=sentences,
+            vector_size=300,
+            window=2,
+            workers=6,
+            sg=1,
+            hs=0,
+            sample=0,
+            negative=5,
+            min_count=100
+        )
+
+        model.save(os.path.join(MODELS_DIR, f"model_{model_tag}_{start_year}-{end_year}.model"))
