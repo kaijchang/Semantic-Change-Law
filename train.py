@@ -3,7 +3,14 @@ from gensim.models import Word2Vec
 import logging
 import os
 
-from common import MODELS_DIR, partition_starts, model_tag, constructors, SentenceMixer
+from common import (
+    MODELS_DIR,
+    SEED,
+    partition_starts,
+    model_tag,
+    constructors,
+    SentenceMixer,
+)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -30,6 +37,7 @@ if __name__ == "__main__":
             sample=0,
             negative=5,
             min_count=100,
+            seed=SEED,
         )
 
         model.save(

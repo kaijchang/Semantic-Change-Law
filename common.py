@@ -9,6 +9,7 @@ import os
 from typing import Iterable
 
 MAX_TOKENS = 2.5e7
+SEED = 42
 
 # from https://discuss.python.org/t/string-isplit-iterator-based-split-for-strings/7533/15
 def isplit(s: str, sep: str):
@@ -108,13 +109,23 @@ class DatasetSentences(SentencesBase):
         self.dataset = dataset
         self.start_year = start_year
         self.end_year = end_year
+        self.iterable_splits = {}
 
     def __iter__(self):
         super().__iter__()
         self.num_tokens = 0
         for i in range(self.start_year, self.end_year + 1):
             if str(i) in self.dataset:
-                for sent in self.get_sentences(self.dataset[str(i)]["article"]):
+                split: Dataset = self.dataset[str(i)]
+                if i not in self.iterable_splits:
+                    self.iterable_splits[i] = split.to_iterable_dataset(
+                        num_shards=min(128, split.num_rows)
+                    ).shuffle(SEED)
+                split = self.iterable_splits[i]
+                for sent in self.get_sentences(
+                    row["article"]
+                    for row in split
+                ):
                     yield sent
             else:
                 logging.warn(f"{i} not found in dataset")
