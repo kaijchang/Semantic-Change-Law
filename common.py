@@ -11,6 +11,7 @@ from typing import Iterable
 MAX_TOKENS = 2.5e7
 SEED = 42
 
+
 # from https://discuss.python.org/t/string-isplit-iterator-based-split-for-strings/7533/15
 def isplit(s: str, sep: str):
     """Lazy version of s.split(sep)
@@ -122,10 +123,7 @@ class DatasetSentences(SentencesBase):
                         num_shards=min(128, split.num_rows)
                     ).shuffle(SEED)
                 split = self.iterable_splits[i]
-                for sent in self.get_sentences(
-                    row["article"]
-                    for row in split
-                ):
+                for sent in self.get_sentences(row["article"] for row in split):
                     yield sent
             else:
                 logging.warn(f"{i} not found in dataset")
