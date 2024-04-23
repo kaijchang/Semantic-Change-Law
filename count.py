@@ -10,8 +10,8 @@ if __name__ == "__main__":
 
     print("Year", end="")
     for constructor in constructors.keys():
-        print(f"\t{constructor}", end="")
-    print("\ttotal")
+        print(f"\t\t{constructor}", end="")
+    print("\t\ttotal")
     for constructor in constructors.keys():
         token_counts[constructor] = {}
 
@@ -30,17 +30,25 @@ if __name__ == "__main__":
             with ThreadPoolExecutor() as executor:
                 futures = []
                 for constructor in constructors:
-                    futures.append(executor.submit(process_sentences, constructor, start_year, end_year))
+                    futures.append(
+                        executor.submit(
+                            process_sentences, constructor, start_year, end_year
+                        )
+                    )
 
                 for constructor, future in zip(constructors, futures):
                     token_counts[constructor][start_year] = future.result()
 
         print(start_year, end="")
         for constructor in constructors.keys():
-            print(f"\t{token_counts[constructor].get(start_year, 0)}", end="")
-        print(f"\t{sum(token_counts[constructor].get(start_year, 0) for constructor in constructors.keys())}")
+            print(f"\t\t{token_counts[constructor].get(start_year, 0)}", end="")
+        print(
+            f"\t\t{sum(token_counts[constructor].get(start_year, 0) for constructor in constructors.keys())}"
+        )
 
     print("Total", end="")
     for constructor in constructors.keys():
-        print(f"\t{sum(token_counts[constructor].values())}", end="")
-    print(f"\t{sum(sum(token_counts[constructor].values()) for constructor in constructors.keys())}")
+        print(f"\t\t{sum(token_counts[constructor].values())}", end="")
+    print(
+        f"\t\t{sum(sum(token_counts[constructor].values()) for constructor in constructors.keys())}"
+    )

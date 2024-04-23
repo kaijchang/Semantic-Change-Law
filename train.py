@@ -14,7 +14,9 @@ if __name__ == "__main__":
 
         logging.info(f"Training a model for {start_year}-{end_year}...")
 
-        sentence_iterables = [constructor(start_year, end_year) for constructor in constructors.values()]
+        sentence_iterables = [
+            constructor(start_year, end_year) for constructor in constructors.values()
+        ]
         sentences = SentenceMixer(*sentence_iterables)
 
         # params from https://github.com/williamleif/histwords/blob/master/sgns/runword2vec.py
@@ -27,7 +29,9 @@ if __name__ == "__main__":
             hs=0,
             sample=0,
             negative=5,
-            min_count=100
+            min_count=100,
         )
 
-        model.save(os.path.join(MODELS_DIR, f"model_{model_tag}_{start_year}-{end_year}.model"))
+        model.save(
+            os.path.join(MODELS_DIR, f"model_{model_tag}_{start_year}-{end_year}.model")
+        )
