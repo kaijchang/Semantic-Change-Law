@@ -170,6 +170,4 @@ MODELS_DIR = "models"
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-model_tag = "_".join(constructors.keys())
-
 partition_starts = [1770] + list(range(1800, 1980, 10))

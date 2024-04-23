@@ -1,18 +1,23 @@
 from gensim.models import Word2Vec
 
 import logging
+import sys
 import os
 
 from common import (
     MODELS_DIR,
     SEED,
     partition_starts,
-    model_tag,
     constructors,
     SentenceMixer,
 )
 
 if __name__ == "__main__":
+    model_tag = sys.argv[1]
+    model_constructors_keys = [
+        key for key in constructors.keys() if key in model_tag.split("_")
+    ]
+
     logging.basicConfig(level=logging.INFO)
 
     for i in range(len(partition_starts) - 1):
@@ -22,7 +27,8 @@ if __name__ == "__main__":
         logging.info(f"Training a model for {start_year}-{end_year}...")
 
         sentence_iterables = [
-            constructor(start_year, end_year) for constructor in constructors.values()
+            constructors[constructor_key](start_year, end_year)
+            for constructor_key in model_constructors_keys
         ]
         sentences = SentenceMixer(*sentence_iterables)
 
