@@ -13,6 +13,10 @@ from common import (
 )
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python train.py <model_tag>")
+        sys.exit(1)
+
     model_tag = sys.argv[1]
     model_constructors_keys = [
         key for key in constructors.keys() if key in model_tag.split("_")

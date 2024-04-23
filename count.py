@@ -7,6 +7,10 @@ from common import partition_starts, constructors
 token_counts: dict[str, dict[int, int]] = {}
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python count.py <model_tag>")
+        sys.exit(1)
+
     model_tag = sys.argv[1]
     model_constructors_keys = [
         key for key in constructors.keys() if key in model_tag.split("_")
