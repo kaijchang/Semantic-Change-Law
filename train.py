@@ -17,6 +17,7 @@ if __name__ == "__main__":
     model_constructors_keys = [
         key for key in constructors.keys() if key in model_tag.split("_")
     ]
+    model_tag = "_".join(model_constructors_keys)
 
     logging.basicConfig(level=logging.INFO)
 
