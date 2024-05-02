@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from spacy.lang.en import English, Language
 from datasets import Dataset
 from datasets import load_dataset, config

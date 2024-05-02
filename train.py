@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from gensim.models import Word2Vec
 
 import logging
