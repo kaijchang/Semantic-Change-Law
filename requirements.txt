@@ -1,3 +1,4 @@
 gensim>=4.3.2
 spacy>=3.7.4
+scipy>=1.10.0
 datasets>=2.18.0

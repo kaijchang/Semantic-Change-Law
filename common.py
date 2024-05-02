@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 
 from spacy.lang.en import English, Language
-from datasets import Dataset
-from datasets import load_dataset, config
+from datasets import Dataset, load_dataset, config
 
 import functools
 import logging
 import os
+import re
 
 from typing import Iterable
 
 MAX_TOKENS = 2.5e7
 SEED = 42
+MODELS_DIR = "models"
 
 
 # from https://discuss.python.org/t/string-isplit-iterator-based-split-for-strings/7533/15
-def isplit(s: str, sep: str):
+def isplit(s: str, seps: list[str]):
     """Lazy version of s.split(sep)
 
     >>> list(isplit("", ","))
@@ -29,18 +30,23 @@ def isplit(s: str, sep: str):
     >>> list(isplit("AAA,,BBB", ",,"))
     ['AAA', 'BBB']
     """
-    seplen = len(sep)
-    if seplen == 0:
+    seplens = [len(sep) for sep in seps]
+    if any(seplen == 0 for seplen in seplens):
         raise ValueError("empty separator")
 
     start = 0
     while True:
-        index = s.find(sep, start)
+        next_idxs = [s.find(sep, start) for sep in seps]
+        index = (
+            min(idx for idx in next_idxs if idx != -1)
+            if any(idx != -1 for idx in next_idxs)
+            else -1
+        )
         if index == -1:
             yield s[start:]
             return
         yield s[start:index]
-        start = index + seplen
+        start = index + seplens[next_idxs.index(index)]
 
 
 class SentencesBase:
@@ -51,11 +57,18 @@ class SentencesBase:
         self.num_tokens = 0
         self.max_tokens = max_tokens
 
+    def clean_text(self, text: str) -> str:
+        return text
+
     def get_sentences(self, texts: Iterable[str]) -> Iterable[list[list[str]]]:
         """Split the specified texts into sentences, consisting of text tokens."""
-        for doc in self.pipeline.pipe(texts):
+        for doc in self.pipeline.pipe(self.clean_text(text) for text in texts):
             for sent in doc.sents:
-                sent = [token.text.lower() for token in sent if not token.is_space]
+                sent = [
+                    token.text.lower() if not token.like_num else "<NUM>"
+                    for token in sent
+                    if token.is_alpha or token.like_num
+                ]
                 if len(sent) == 0:
                     continue
                 yield sent
@@ -90,7 +103,9 @@ class YearFileSentences(SentencesBase):
             file_path = os.path.join(self.dirname, f"{i}.txt")
             if os.path.exists(file_path):
                 with open(file_path, "r", encoding="latin1") as f:
-                    for sent in self.get_sentences(f):
+                    for sent in self.get_sentences(
+                        isplit(re.sub(r"-\.?\n+", "", f.read()), ["\f", "\n\n"])
+                    ):
                         yield sent
             else:
                 logging.warning(f"{i}.txt not found in {self.dirname}")
@@ -152,6 +167,7 @@ class SentenceMixer:
                     iterators[i] = iter(self.sentence_iterables[i])
 
 
+# english = spacy.load("en_core_web_sm", disable=["ner", "parser"])
 english = English(pipeline=[], batch_size=100)
 sentencizer = english.add_pipe("sentencizer")
 
@@ -168,8 +184,16 @@ constructors = {
     "as": functools.partial(DatasetSentences, dataset, english),
 }
 
-MODELS_DIR = "models"
-
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-partition_starts = [1770] + list(range(1800, 1980, 10))
+PARTITION_STARTS = list(range(1770, 2030, 10))
+VOCAB_CUTOFF_YEAR = 1800
+MIN_COUNT = 50
+
+
+def get_model_tag():
+    model_constructors_keys = [key for key in constructors.keys()]
+    return (
+        model_constructors_keys,
+        f"{'_'.join(model_constructors_keys)}_{PARTITION_STARTS[0]}-{PARTITION_STARTS[-1] - 1}_{VOCAB_CUTOFF_YEAR}",
+    )

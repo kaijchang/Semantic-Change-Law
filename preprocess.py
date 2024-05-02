@@ -2,22 +2,14 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import logging
-import sys
 
-from common import partition_starts, constructors
+from common import PARTITION_STARTS, VOCAB_CUTOFF_YEAR, constructors, get_model_tag
 
 token_counts: dict[str, dict[int, int]] = {}
+vocab_freq_counts: dict[str, int] = {}
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python count.py <model_tag>")
-        sys.exit(1)
-
-    model_tag = sys.argv[1]
-    model_constructors_keys = [
-        key for key in constructors.keys() if key in model_tag.split("_")
-    ]
-    model_tag = "_".join(model_constructors_keys)
+    model_constructors_keys, model_tag = get_model_tag()
 
     logging.basicConfig(level=logging.ERROR)
 
@@ -28,16 +20,21 @@ if __name__ == "__main__":
     for constructor_key in model_constructors_keys:
         token_counts[constructor_key] = {}
 
-    for i in range(len(partition_starts) - 1):
-        start_year = partition_starts[i]
-        end_year = partition_starts[i + 1] - 1
+    for i in range(len(PARTITION_STARTS) - 1):
+        start_year = PARTITION_STARTS[i]
+        end_year = PARTITION_STARTS[i + 1] - 1
         for constructor_key in model_constructors_keys:
             token_counts[constructor_key][start_year] = 0
 
             def process_sentences(constructor_key, start_year, end_year):
                 count = 0
                 for sent in constructors[constructor_key](start_year, end_year):
-                    count += len(sent)
+                    for token in sent:
+                        if end_year < VOCAB_CUTOFF_YEAR:
+                            vocab_freq_counts[token] = (
+                                vocab_freq_counts.get(token, 0) + 1
+                            )
+                        count += 1
                 return count
 
             with ThreadPoolExecutor() as executor:
@@ -65,3 +62,9 @@ if __name__ == "__main__":
     print(
         f"\t\t{sum(sum(token_counts[constructor_key].values()) for constructor_key in model_constructors_keys)}"
     )
+
+    with open(f"vocab_freq_counts_{model_tag}.txt", "w") as f:
+        for token, count in sorted(
+            vocab_freq_counts.items(), key=lambda x: x[1], reverse=True
+        ):
+            f.write(f"{token}\t{count}\n")
