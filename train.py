@@ -62,12 +62,17 @@ if __name__ == "__main__":
                 epochs=10,
                 alpha=0.01,
                 min_alpha=0.0001,
-                trim_rule=lambda word, _count, _min_count: RULE_DISCARD
-                if vocab_freq_counts.get(word, 0) < MIN_COUNT
-                else RULE_KEEP,
+                min_count=MIN_COUNT,
             )
 
-        model.build_vocab(sentences, update=previous_start_year is not None)
+        model.build_vocab(
+            sentences,
+            update=previous_start_year is not None,
+            trim_rule=lambda word, _count, min_count: RULE_DISCARD
+            if vocab_freq_counts.get(word, 0) < min_count
+            else RULE_KEEP,
+        )
+        print(model.wv.key_to_index)
         model.train(sentences, total_examples=model.corpus_count, epochs=model.epochs)
 
         model.save(

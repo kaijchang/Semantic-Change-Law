@@ -188,7 +188,7 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 
 PARTITION_STARTS = list(range(1770, 1980, 10))
 VOCAB_CUTOFF_YEAR = 1800
-MIN_COUNT = 50
+MIN_COUNT = 10
 
 
 def get_model_tag():
