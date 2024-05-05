@@ -23,31 +23,29 @@ if __name__ == "__main__":
     for i in range(len(PARTITION_STARTS) - 1):
         start_year = PARTITION_STARTS[i]
         end_year = PARTITION_STARTS[i + 1] - 1
-        for constructor_key in model_constructors_keys:
-            token_counts[constructor_key][start_year] = 0
 
-            def process_sentences(constructor_key, start_year, end_year):
-                count = 0
-                for sent in constructors[constructor_key](start_year, end_year):
-                    for token in sent:
-                        if end_year < VOCAB_CUTOFF_YEAR:
-                            vocab_freq_counts[token] = (
-                                vocab_freq_counts.get(token, 0) + 1
-                            )
-                        count += 1
-                return count
-
-            with ThreadPoolExecutor() as executor:
-                futures = []
-                for constructor_key in model_constructors_keys:
-                    futures.append(
-                        executor.submit(
-                            process_sentences, constructor_key, start_year, end_year
+        def process_sentences(constructor_key, start_year, end_year):
+            count = 0
+            for sent in constructors[constructor_key](start_year, end_year):
+                for token in sent:
+                    if end_year < VOCAB_CUTOFF_YEAR:
+                        vocab_freq_counts[token] = (
+                            vocab_freq_counts.get(token, 0) + 1
                         )
-                    )
+                    count += 1
+            return count
 
-                for constructor_key, future in zip(model_constructors_keys, futures):
-                    token_counts[constructor_key][start_year] = future.result()
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for constructor_key in model_constructors_keys:
+                futures.append(
+                    executor.submit(
+                        process_sentences, constructor_key, start_year, end_year
+                    )
+                )
+
+            for constructor_key, future in zip(model_constructors_keys, futures):
+                token_counts[constructor_key][start_year] = future.result()
 
         print(start_year, end="")
         for constructor_key in model_constructors_keys:

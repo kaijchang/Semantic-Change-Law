@@ -57,12 +57,9 @@ class SentencesBase:
         self.num_tokens = 0
         self.max_tokens = max_tokens
 
-    def clean_text(self, text: str) -> str:
-        return text
-
     def get_sentences(self, texts: Iterable[str]) -> Iterable[list[list[str]]]:
         """Split the specified texts into sentences, consisting of text tokens."""
-        for doc in self.pipeline.pipe(self.clean_text(text) for text in texts):
+        for doc in self.pipeline.pipe(texts):
             for sent in doc.sents:
                 sent = [
                     token.text.lower() if not token.like_num else "<NUM>"
@@ -179,8 +176,8 @@ dataset = load_dataset(
 )
 
 constructors = {
-    "ussal": functools.partial(YearFileSentences, "US-SAL-Corpus/text", english),
-    "usr": functools.partial(YearFileSentences, "US-R-Corpus/text", english),
+    # "ussal": functools.partial(YearFileSentences, "US-SAL-Corpus/text", english),
+    # "usr": functools.partial(YearFileSentences, "US-R-Corpus/text", english),
     "as": functools.partial(DatasetSentences, dataset, english),
 }
 
@@ -188,7 +185,7 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 
 PARTITION_STARTS = list(range(1770, 1980, 10))
 VOCAB_CUTOFF_YEAR = 1800
-MIN_COUNT = 10
+MIN_COUNT = 1
 
 
 def get_model_tag():

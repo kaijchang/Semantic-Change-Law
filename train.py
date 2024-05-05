@@ -27,7 +27,7 @@ if __name__ == "__main__":
             token, count = line.strip().split("\t")
             vocab_freq_counts[token] = int(count)
 
-    for i in range(10, len(PARTITION_STARTS) - 1):
+    for i in range(len(PARTITION_STARTS) - 1):
         start_year = PARTITION_STARTS[i]
         end_year = PARTITION_STARTS[i + 1] - 1
 
