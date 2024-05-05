@@ -176,8 +176,8 @@ dataset = load_dataset(
 )
 
 constructors = {
-    # "ussal": functools.partial(YearFileSentences, "US-SAL-Corpus/text", english),
-    # "usr": functools.partial(YearFileSentences, "US-R-Corpus/text", english),
+    "ussal": functools.partial(YearFileSentences, "US-SAL-Corpus/text", english),
+    "usr": functools.partial(YearFileSentences, "US-R-Corpus/text", english),
     "as": functools.partial(DatasetSentences, dataset, english),
 }
 
@@ -188,8 +188,8 @@ VOCAB_CUTOFF_YEAR = 1800
 MIN_COUNT = 1
 
 
-def get_model_tag():
-    model_constructors_keys = [key for key in constructors.keys()]
+def get_model_tag(arg: str):
+    model_constructors_keys = [key for key in constructors.keys() if key in arg]
     return (
         model_constructors_keys,
         f"{'_'.join(model_constructors_keys)}_{PARTITION_STARTS[0]}-{PARTITION_STARTS[-1] - 1}_{VOCAB_CUTOFF_YEAR}",

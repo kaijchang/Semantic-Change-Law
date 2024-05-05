@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import logging
+import sys
 
 from common import PARTITION_STARTS, VOCAB_CUTOFF_YEAR, constructors, get_model_tag
 
@@ -9,7 +10,11 @@ token_counts: dict[str, dict[int, int]] = {}
 vocab_freq_counts: dict[str, int] = {}
 
 if __name__ == "__main__":
-    model_constructors_keys, model_tag = get_model_tag()
+    if len(sys.argv) < 2:
+        print("Usage: python preprocess.py <model_tag>")
+        sys.exit(1)
+
+    model_constructors_keys, model_tag = get_model_tag(sys.argv[1])
 
     logging.basicConfig(level=logging.ERROR)
 

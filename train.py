@@ -4,6 +4,7 @@ from gensim.models import Word2Vec
 from gensim.utils import RULE_DISCARD, RULE_KEEP
 
 import logging
+import sys
 import os
 
 from common import (
@@ -17,7 +18,11 @@ from common import (
 )
 
 if __name__ == "__main__":
-    model_constructors_keys, model_tag = get_model_tag()
+    if len(sys.argv) < 2:
+        print("Usage: python train.py <model_tag>")
+        sys.exit(1)
+
+    model_constructors_keys, model_tag = get_model_tag(sys.argv[1])
 
     logging.basicConfig(level=logging.INFO)
 
