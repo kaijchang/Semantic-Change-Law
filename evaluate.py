@@ -16,18 +16,18 @@ pairs = [
     ("private", "secret"), # -1
     ("private", ("not", "open")), # -1
     ("private", ("not", "public")), # -1
-    ("liberty", ("freedom", "from", "tyranny")), # -1
-    ("liberty", ("freedom", "from", "slavery")), # -1
+    ("liberty", ("freedom", "from", "king")), # -1
+    ("liberty", ("freedom", "from", "slave")), # -1
     ("commerce", ("buy", "merchandise")), # -1
     ("commerce", ("sell", "merchandise")), # -1
     ("regulate", ("make", "standard")), # -1
     ("private", "individual"), # +1
     ("private", "personal"), # +1
     ("liberty", ("freedom", "from", "restraint")), # +1
-    ("commerce", ("any", "productive", "activity")), # +1
-    ("commerce", ("transportation")), # +1
+    ("commerce", "production"), # +1
+    ("commerce", "transportation"), # +1
     ("regulate", "prohibit"), # +1
-    ("regulate", "restrict"), # +1
+    ("regulate", "limit"), # +1
     ("liberty", "private") # +1
 ]
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         for w1, w2 in pairs:
             if w1 not in model.wv or (
                 (type(w2) == str and w2 not in model.wv)
-                or not all(w in model.wv for w in w2)
+                or (type(w2) == tuple and not all(w in model.wv for w in w2))
             ):
                 logging.warning(f"Words {w1} or {w2} not in vocabulary")
                 continue
